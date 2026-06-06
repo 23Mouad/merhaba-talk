@@ -35,8 +35,6 @@ export default function TalkPage() {
   const [popup, setPopup] = useState<{ text: string; x: number; y: number; translation: string; loading: boolean } | null>(null);
 
   useEffect(() => {
-    const s = settingsStorage.get();
-    setApiKey(s.geminiApiKey);
     setHistory(conversationStorage.getAll());
   }, []);
 
@@ -61,23 +59,18 @@ export default function TalkPage() {
       const y = rect.top - 10;
       
       setPopup({ text, x, y, translation: '', loading: true });
-      
-      if (!apiKey) {
-        setPopup({ text, x, y, translation: 'API key مطلوب', loading: false });
-        return;
-      }
 
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        const res = await fetch('/api/translate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: "ترجم هذا النص التركي إلى العربية. أعطني الترجمة العربية فقط بدون أي نص إضافي." }] },
-            contents: [{ role: 'user', parts: [{ text }] }]
-          })
+          body: JSON.stringify({ text })
         });
         const data = await res.json();
-        const trans = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'خطأ في الترجمة';
+        
+        if (!res.ok) throw new Error(data.error);
+        
+        const trans = data.translation || 'خطأ في الترجمة';
         setPopup(prev => prev ? { ...prev, translation: trans, loading: false } : null);
       } catch {
         setPopup(prev => prev ? { ...prev, translation: 'خطأ', loading: false } : null);
@@ -86,7 +79,7 @@ export default function TalkPage() {
     
     document.addEventListener('mouseup', handleMouseUp);
     return () => document.removeEventListener('mouseup', handleMouseUp);
-  }, [apiKey]);
+  }, []);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
@@ -101,21 +94,8 @@ export default function TalkPage() {
     setInput('');
     setLoading(true);
 
-    if (!apiKey) {
-      const fallbackMsg: ChatMessage = {
-        id: `msg_${Date.now() + 1}`,
-        role: 'assistant',
-        contentTr: 'Merhaba! API anahtarı gerekiyor.',
-        contentAr: 'مرحباً! يرجى إضافة مفتاح Gemini API في صفحة الإعدادات لتفعيل المحادثة الذكية.',
-        timestamp: new Date().toISOString(),
-      };
-      setMessages([...newMsgs, fallbackMsg]);
-      setLoading(false);
-      return;
-    }
-
     try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -130,8 +110,8 @@ export default function TalkPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        console.error('Gemini API Error:', data.error);
-        throw new Error(data.error?.message || 'API Error');
+        console.error('API Error:', data.error);
+        throw new Error(data.error || 'API Error');
       }
       const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
       const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();

@@ -120,7 +120,7 @@ export default function Dashboard() {
       </div>
 
       {/* XP + Goal */}
-      <div className="animate-fade-up" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28, animationDelay: '0.15s' }}>
+      <div className="animate-fade-up grid grid-cols-1 md:grid-cols-2 gap-5 mb-7" style={{ animationDelay: '0.15s' }}>
         <div className="card" style={{ padding: 24 }}>
           <div style={{ fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>⚡</span> تقدم المستوى
@@ -170,12 +170,12 @@ export default function Dashboard() {
       </div>
 
       {/* Heatmap + Tip */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 20, marginBottom: 28 }}>
-        <div className="card animate-fade-up" style={{ padding: 24, animationDelay: '0.25s' }}>
+      <div className="flex flex-col md:flex-row gap-5 mb-7">
+        <div className="card animate-fade-up flex-1 min-w-0" style={{ padding: 24, animationDelay: '0.25s' }}>
           <div className="section-title" style={{ marginBottom: 16, fontSize: 16 }}>📊 نشاطك الأسبوعي</div>
           <Heatmap activity={activity} />
         </div>
-        <div className="card animate-fade-up" style={{ padding: 24, minWidth: 200, animationDelay: '0.3s', background: 'linear-gradient(135deg,rgba(26,115,232,0.05),rgba(13,71,161,0.08))' }}>
+        <div className="card animate-fade-up w-full md:w-[280px] shrink-0" style={{ padding: 24, animationDelay: '0.3s', background: 'linear-gradient(135deg,rgba(26,115,232,0.05),rgba(13,71,161,0.08))' }}>
           <div className="section-title" style={{ marginBottom: 12, fontSize: 16 }}>💡 نصيحة اليوم</div>
           <div style={{ fontSize: 15, fontFamily: 'Plus Jakarta Sans, sans-serif', color: '#1A73E8', fontWeight: 600, marginBottom: 10, direction: 'ltr', lineHeight: 1.5 }}>
             "{tip.tr}"

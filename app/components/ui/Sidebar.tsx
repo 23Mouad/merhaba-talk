@@ -134,12 +134,13 @@ export function Sidebar() {
       </aside>
 
       {/* Spacer */}
-      <div style={{ width: w, flexShrink: 0, transition: 'width 0.3s' }} />
+      <div className="sidebar-spacer" style={{ width: w, flexShrink: 0, transition: 'width 0.3s' }} />
 
       <style>{`
         @media (max-width: 768px) {
           .mobile-menu-btn { display: flex !important; }
           aside { transform: ${mobileOpen ? 'translateX(0)' : 'translateX(100%)'}; }
+          .sidebar-spacer { display: none; }
         }
       `}</style>
     </>

@@ -96,13 +96,9 @@ export default function SettingsPage() {
       </Section>
 
       {/* AI Chat */}
-      <Section title="🤖 مفتاح Gemini API">
-        <Row label="مفتاح API" desc="للحصول على مفتاح مجاني: aistudio.google.com">
-          <input className="input" type="password" value={settings.geminiApiKey} onChange={e => update({ geminiApiKey: e.target.value })}
-            placeholder="AIzaSy..." style={{ width: 240, direction: 'ltr' }} />
-        </Row>
+      <Section title="🤖 الذكاء الاصطناعي">
         <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 10, background: 'rgba(26,115,232,0.06)', fontSize: 13, color: 'var(--text-muted)' }}>
-          💡 مفتاح Gemini مجاني. يُخزَّن محلياً فقط ولا يُرسَل لأي خادم آخر.
+          💡 تم تكوين مفتاح الذكاء الاصطناعي (Gemini) مسبقاً على الخادم لضمان حماية أفضل وتجربة أسهل.
         </div>
       </Section>
 
