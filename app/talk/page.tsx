@@ -59,8 +59,9 @@ export default function TalkPage() {
         const rect = range?.getBoundingClientRect();
         if (!rect) return;
 
+        const isMobile = window.innerWidth <= 768;
         const x = rect.left + rect.width / 2;
-        const y = rect.top - 10;
+        const y = rect.top - (isMobile ? 60 : 10);
         
         setPopup({ text, x, y, translation: '', loading: true });
 
