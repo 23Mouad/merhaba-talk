@@ -43,42 +43,52 @@ export default function TalkPage() {
   }, [messages]);
 
   useEffect(() => {
+    let timeoutId: any;
     const handleMouseUp = async () => {
-      const selection = window.getSelection();
-      const text = selection?.toString().trim();
-      if (!text || text.length === 0) {
-        setPopup(null);
-        return;
-      }
-      
-      const range = selection?.getRangeAt(0);
-      const rect = range?.getBoundingClientRect();
-      if (!rect) return;
-
-      const x = rect.left + rect.width / 2;
-      const y = rect.top - 10;
-      
-      setPopup({ text, x, y, translation: '', loading: true });
-
-      try {
-        const res = await fetch('/api/translate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text })
-        });
-        const data = await res.json();
+      // Small timeout for mobile to finish selecting
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(async () => {
+        const selection = window.getSelection();
+        const text = selection?.toString().trim();
+        if (!text || text.length === 0) {
+          setPopup(null);
+          return;
+        }
         
-        if (!res.ok) throw new Error(data.error);
+        const range = selection?.getRangeAt(0);
+        const rect = range?.getBoundingClientRect();
+        if (!rect) return;
+
+        const x = rect.left + rect.width / 2;
+        const y = rect.top - 10;
         
-        const trans = data.translation || 'خطأ في الترجمة';
-        setPopup(prev => prev ? { ...prev, translation: trans, loading: false } : null);
-      } catch {
-        setPopup(prev => prev ? { ...prev, translation: 'خطأ', loading: false } : null);
-      }
+        setPopup({ text, x, y, translation: '', loading: true });
+
+        try {
+          const res = await fetch('/api/translate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+          });
+          const data = await res.json();
+          
+          if (!res.ok) throw new Error(data.error);
+          
+          const trans = data.translation || 'خطأ في الترجمة';
+          setPopup(prev => prev ? { ...prev, translation: trans, loading: false } : null);
+        } catch {
+          setPopup(prev => prev ? { ...prev, translation: 'خطأ', loading: false } : null);
+        }
+      }, 100);
     };
     
     document.addEventListener('mouseup', handleMouseUp);
-    return () => document.removeEventListener('mouseup', handleMouseUp);
+    document.addEventListener('touchend', handleMouseUp);
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchend', handleMouseUp);
+    };
   }, []);
 
   const sendMessage = async (text: string) => {
@@ -256,13 +266,28 @@ export default function TalkPage() {
       <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', background: 'var(--bg-card)' }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <VoiceButton onResult={text => setInput(text)} size={44} />
-          <input
+          <textarea
             className="input"
             value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage(input)}
+            onChange={e => {
+              setInput(e.target.value);
+              e.target.style.height = 'auto';
+              e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage(input);
+                e.currentTarget.style.height = 'auto';
+              }
+            }}
             placeholder="اكتب بالتركية أو العربية..."
-            style={{ flex: 1, direction: 'auto' as any, fontSize: 15, padding: '12px 16px' }}
+            style={{ 
+              flex: 1, direction: 'auto' as any, fontSize: 15, padding: '12px 16px', 
+              resize: 'none', overflowY: 'auto', minHeight: '48px', maxHeight: '150px', 
+              lineHeight: '1.5', boxSizing: 'border-box', fontFamily: 'inherit'
+            }}
+            rows={1}
           />
           <button onClick={() => sendMessage(input)} disabled={loading || !input.trim()}
             style={{ width: 44, height: 44, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#1A73E8,#0D47A1)', color: '#fff', cursor: 'pointer', fontSize: 18, opacity: (!input.trim() || loading) ? 0.5 : 1 }}>

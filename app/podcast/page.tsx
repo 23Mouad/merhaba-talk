@@ -39,34 +39,43 @@ export default function PodcastPage() {
   };
 
   useEffect(() => {
+    let timeoutId: any;
     const handleMouseUp = async () => {
-      const selection = window.getSelection();
-      const text = selection?.toString().trim();
-      if (!text || text.length === 0) return;
-      
-      if (playerRef.current) {
-        try { playerRef.current.pauseVideo(); } catch (e) {}
-      }
-      
-      setSelectionPopup({ text, translation: '', loading: true });
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(async () => {
+        const selection = window.getSelection();
+        const text = selection?.toString().trim();
+        if (!text || text.length === 0) return;
+        
+        if (playerRef.current) {
+          try { playerRef.current.pauseVideo(); } catch (e) {}
+        }
+        
+        setSelectionPopup({ text, translation: '', loading: true });
 
-      try {
-        const res = await fetch('/api/translate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
-        const trans = data.translation || 'خطأ في الترجمة';
-        setSelectionPopup(prev => prev ? { ...prev, translation: trans, loading: false } : null);
-      } catch {
-        setSelectionPopup(prev => prev ? { ...prev, translation: 'خطأ', loading: false } : null);
-      }
+        try {
+          const res = await fetch('/api/translate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+          const trans = data.translation || 'خطأ في الترجمة';
+          setSelectionPopup(prev => prev ? { ...prev, translation: trans, loading: false } : null);
+        } catch {
+          setSelectionPopup(prev => prev ? { ...prev, translation: 'خطأ', loading: false } : null);
+        }
+      }, 100);
     };
 
     document.addEventListener('mouseup', handleMouseUp);
-    return () => document.removeEventListener('mouseup', handleMouseUp);
+    document.addEventListener('touchend', handleMouseUp);
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchend', handleMouseUp);
+    };
   }, []);
 
   useEffect(() => {
