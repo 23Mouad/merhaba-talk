@@ -9,18 +9,41 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'GEMINI_API_KEY not configured on server' }, { status: 500 });
     }
 
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: body.systemInstruction,
-        contents: body.contents
-      }),
-    });
+    let res;
+    let data;
+    let retries = 3;
+    let delay = 1000;
 
-    const data = await res.json();
-    if (!res.ok) {
-      return NextResponse.json({ error: data.error?.message || 'API Error' }, { status: res.status });
+    while (retries > 0) {
+      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: body.systemInstruction,
+          contents: body.contents
+        }),
+      });
+
+      data = await res.json();
+      
+      if (res.ok) {
+        break; // Success
+      }
+      
+      // If error is 429 (Too Many Requests) or 500+ (Server Errors), retry
+      if (res.status === 429 || res.status >= 500) {
+        retries--;
+        if (retries === 0) break;
+        await new Promise(r => setTimeout(r, delay));
+        delay *= 2; // Exponential backoff
+      } else {
+        // For other errors (like 400 Bad Request), don't retry
+        break;
+      }
+    }
+
+    if (!res || !res.ok) {
+      return NextResponse.json({ error: data?.error?.message || 'API Error after retries' }, { status: res?.status || 500 });
     }
 
     return NextResponse.json(data);
